@@ -39,7 +39,7 @@ export const ReasoningInsights: React.FC<ReasoningInsightsProps> = ({ insights }
             key={insight.id} 
             role="treeitem" 
             aria-expanded={isExpanded} 
-            className="mb-2 border-border shadow-sm overflow-hidden"
+            className="mb-2 border-border overflow-hidden"
           >
             <button
               className="w-full text-left p-4 flex items-center justify-between hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-ring"

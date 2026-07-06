@@ -38,8 +38,8 @@ class Settings(BaseSettings):
     UPLOAD_DIRECTORY: str = "uploads"
     MAX_UPLOAD_SIZE_MB: int = 100
 
-    # LLM Settings
-    LLM_PROVIDER: str = "ollama"
+    # LLM Settings — Gemini is the only supported provider (no local Ollama).
+    LLM_PROVIDER: str = "gemini"
     LLM_MODEL: str = "gemma:2b"
     LLM_BASE_URL: str = "http://localhost:11434"
     LLM_TEMPERATURE: float = 0.1
@@ -75,7 +75,11 @@ class Settings(BaseSettings):
     RAG_CHUNK_SIZE: int = 1000
     RAG_CHUNK_OVERLAP: int = 200
     RAG_TOP_K: int = 3
-    RAG_SIMILARITY_THRESHOLD: float = 0.5
+    # Scores come from Chroma as similarity = 1/(1+L2_distance), whose floor for
+    # normalized embeddings is ~0.33. A 0.5 cut filtered out genuine matches on
+    # short tabular records (they land ~0.38-0.45), leaving retrieval empty and
+    # silently falling back to mock context. 0.3 keeps the top_k nearest real rows.
+    RAG_SIMILARITY_THRESHOLD: float = 0.3
     RAG_MAX_CONTEXT_TOKENS: int = 1500
     RAG_ENABLE_PREPROCESSING: bool = True
     RAG_ENABLE_STOPWORDS: bool = True

@@ -15,7 +15,7 @@ export const EvidenceInspector: React.FC<EvidenceInspectorProps> = ({ evidence, 
 
   return (
     <div className={cn(
-      "fixed right-0 top-16 bottom-0 w-80 bg-card border-l border-border shadow-xl z-40 transition-transform duration-300 flex flex-col overflow-hidden"
+      "fixed right-0 top-16 bottom-0 w-80 bg-card border-l border-border z-40 transition-transform duration-300 flex flex-col overflow-hidden"
     )}>
       {/* Header */}
       <div className="p-4 border-b border-border flex items-center justify-between bg-muted/30">

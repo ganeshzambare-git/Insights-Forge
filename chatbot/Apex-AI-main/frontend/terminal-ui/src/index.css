@@ -1,1 +1,6 @@
 /* Removed default Vite styles to prevent interference with terminal UI */
+
+/* Tailwind utilities only (no preflight, to avoid resetting the terminal UI) */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);

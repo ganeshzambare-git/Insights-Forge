@@ -7,7 +7,7 @@ import SuggestedQuestionsCard from './components/SuggestedQuestionsCard';
 import SectorCommandCards from './components/SectorCommandCards';
 import IntelligenceDashboard from './components/IntelligenceDashboard';
 import ChatMessages from './components/ChatMessages';
-import CommandPrompt from './components/CommandPrompt';
+import AIChatInput from './components/AIChatInput';
 import { useUserContext } from './context/UserContext';
 
 import './styles/variables.css';
@@ -97,7 +97,7 @@ const App = () => {
               <span className="typing-animation" style={{ color: 'var(--text-secondary)' }}>Processing command and fetching intelligence...</span>
             </div>
           ) : (
-            <CommandPrompt onCommand={handleManualCommand} />
+            <AIChatInput onCommand={handleManualCommand} />
           )}
         </section>
       </TerminalLayout>

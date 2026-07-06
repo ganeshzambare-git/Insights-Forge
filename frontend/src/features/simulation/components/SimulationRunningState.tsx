@@ -15,8 +15,8 @@ export const SimulationRunningState = () => {
           >
             <div className="flex flex-col gap-4">
               <div className="text-slate-600">Recomputing probabilities and ROI bounds...</div>
-              <div role="progressbar" aria-label="Running Simulation" className="h-2 bg-blue-200 rounded w-full overflow-hidden">
-                <div className="h-full bg-blue-600 animate-pulse w-1/2" />
+              <div role="progressbar" aria-label="Running Simulation" className="h-2 bg-mist rounded w-full overflow-hidden">
+                <div className="h-full bg-ember animate-pulse w-1/2" />
               </div>
             </div>
           </AINativeCard>

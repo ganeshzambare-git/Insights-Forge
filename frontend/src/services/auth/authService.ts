@@ -23,7 +23,8 @@ export const authService = {
     useUIStore.getState().reset();
 
     // 2. Explicitly clear persisted storages (prevent hydration leaks)
-    sessionStorage.removeItem('insight-auth-storage');
+    localStorage.removeItem('insight-auth-storage');
+    sessionStorage.removeItem('insight-auth-storage'); // legacy location
     localStorage.removeItem('insight-tenant-storage');
     localStorage.removeItem('insight-ui-storage');
 

@@ -98,13 +98,13 @@ export const ExecutiveOverride: React.FC<ExecutiveOverrideProps> = ({
             </button>
             <button 
               onClick={() => onApprove(approval.id)}
-              className="px-4 py-2 border border-green-500 text-green-500 rounded-md hover:bg-green-500/10"
+              className="px-4 py-2 border border-brand-success text-brand-success rounded-none hover:bg-brand-success/10"
             >
               Approve
             </button>
             <button 
               onClick={() => onReject(approval.id)}
-              className="px-4 py-2 border border-red-500 text-red-500 rounded-md hover:bg-red-500/10"
+              className="px-4 py-2 border border-brand-error text-brand-error rounded-none hover:bg-brand-error/10"
             >
               Reject
             </button>
@@ -113,7 +113,7 @@ export const ExecutiveOverride: React.FC<ExecutiveOverrideProps> = ({
           <div className="flex gap-3 justify-between">
             <button 
               onClick={() => onEscalate(approval.id)}
-              className="px-4 py-2 border border-purple-500 text-purple-500 rounded-md hover:bg-purple-500/10"
+              className="px-4 py-2 border border-brass text-brass rounded-none hover:bg-brass/10"
             >
               Escalate to Board
             </button>

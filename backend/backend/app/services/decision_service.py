@@ -96,7 +96,7 @@ class DecisionService:
                 parser_quality=parser_quality,
                 retrieved_docs_count=retrieved_docs_count,
                 model_name=self.decision_engine.llm_provider.model,
-                provider_name="ollama",
+                provider_name=settings.LLM_PROVIDER,
                 prompt_version=self.decision_engine.prompt_version,
             )
 

@@ -27,7 +27,7 @@ export const ApprovalWorkflowComponent: React.FC<ApprovalWorkflowProps> = ({ wor
   };
 
   return (
-    <Card className={cn("border-border shadow-sm", className)}>
+    <Card className={cn("border-border", className)}>
       <CardHeader className="pb-2">
         <CardTitle className="text-h4 font-medium flex items-center justify-between">
           <span>Approval Workflow</span>

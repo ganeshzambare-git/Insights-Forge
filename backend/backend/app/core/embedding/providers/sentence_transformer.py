@@ -22,8 +22,18 @@ class SentenceTransformerProvider(EmbeddingProvider):
         # Lazily import sentence_transformers to optimize startup time
         from sentence_transformers import SentenceTransformer
 
-        logger.info(f"Loading local SentenceTransformer model: {model_name}...")
-        self.model = SentenceTransformer(model_name)
+        # Force CPU. In a forked Celery worker (prefork pool) the default device
+        # auto-selection picks Apple Silicon MPS/Metal, which aborts the process
+        # with a Metal SIGABRT ("Unable to reach MTLCompilerService") because a
+        # GPU context cannot be initialized after fork(). MiniLM is tiny, so CPU
+        # is fine and keeps indexing fork-safe. Override via EMBEDDING_DEVICE.
+        import os
+
+        device = os.environ.get("EMBEDDING_DEVICE", "cpu")
+        logger.info(
+            f"Loading local SentenceTransformer model: {model_name} on device={device}..."
+        )
+        self.model = SentenceTransformer(model_name, device=device)
         self._dimension = self.model.get_sentence_embedding_dimension()
         logger.info(
             f"SentenceTransformer model loaded successfully with dimension {self._dimension}."

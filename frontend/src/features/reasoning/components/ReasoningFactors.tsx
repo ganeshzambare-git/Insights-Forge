@@ -20,7 +20,7 @@ export const ReasoningFactors: React.FC<ReasoningFactorsProps> = ({ factors }) =
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {factors.map(factor => (
-        <Card key={factor.id} className="border-border shadow-sm">
+        <Card key={factor.id} className="border-border">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-caption font-semibold">{factor.name}</CardTitle>
             {getTrendIcon(factor.trend)}

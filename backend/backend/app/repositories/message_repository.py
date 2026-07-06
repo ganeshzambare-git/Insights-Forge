@@ -6,7 +6,7 @@ Handles database operations for the AIMessage model.
 
 import uuid
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, lazyload
 from app.models.ai_message import AIMessage
 from app.models.enums import AIMessageSender
 
@@ -57,6 +57,10 @@ class MessageRepository:
             )
             .order_by(AIMessage.created_at.desc())
             .limit(limit)
+            # AIMessage.conversation is lazy="selectin" and AIConversation.messages
+            # is too, forming a cycle that loads the whole thread (and re-loads it
+            # per message) — ~45s over Neon. We only need scalar columns here.
+            .options(lazyload("*"))
         )
         latest = self.db.execute(stmt).scalars().all()
         return list(reversed(latest))
@@ -75,5 +79,7 @@ class MessageRepository:
                 AIMessage.is_deleted.is_(False),
             )
             .order_by(AIMessage.created_at.asc())
+            # Same selectin cycle avoidance as get_recent_messages.
+            .options(lazyload("*"))
         )
         return list(self.db.execute(stmt).scalars().all())

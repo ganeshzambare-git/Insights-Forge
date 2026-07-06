@@ -142,7 +142,7 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
   return (
     <div className="auth-page">
       <style dangerouslySetInnerHTML={{ __html: AUTH_THEME_CSS }} />
-      <a className="auth-logo" onClick={() => navigate('/')}>DecisionIQ</a>
+      <a className="auth-logo" onClick={() => navigate('/')}>InsightForge</a>
       {children}
     </div>
   );

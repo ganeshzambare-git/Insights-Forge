@@ -17,6 +17,7 @@ export const queryKeys = {
     records: (tenantId: string, sectorId: string) => [tenantId, sectorId, 'records'] as const,
     record: (tenantId: string, sectorId: string, recordId: string) => [tenantId, sectorId, 'records', recordId] as const,
     geo: (tenantId: string, sectorId: string) => [tenantId, sectorId, 'geo'] as const,
+    profile: (tenantId: string, sectorId: string) => [tenantId, sectorId, 'profile'] as const,
   },
   // Contract endpoints scoped by the caller's JWT (not by a path param).
   datasets: {

@@ -46,7 +46,7 @@ export const SimulationParametersPanel = ({ parameters, onParametersChange }: Pr
           <div className="flex flex-col gap-2 pt-2">
             <div className="flex justify-between text-sm text-slate-600">
               <span>{param.bounds[0]} {param.unit}</span>
-              <span className="font-medium text-blue-600">{param.proposedValue} {param.unit}</span>
+              <span className="font-medium text-ember">{param.proposedValue} {param.unit}</span>
               <span>{param.bounds[1]} {param.unit}</span>
             </div>
             <input

@@ -17,7 +17,7 @@ export const SimulationErrorState = ({ error }: Props) => {
             confidenceScore={0}
             type="Anomaly"
           >
-            <div className="text-red-500">{error.message}</div>
+            <div className="text-brand-error">{error.message}</div>
           </AINativeCard>
         </OSSection>
       </OSGrid>

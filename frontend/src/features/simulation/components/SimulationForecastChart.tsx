@@ -11,7 +11,7 @@ export const SimulationForecastChart = ({ forecasts }: Props) => {
   // Safety limit
   if (forecasts.length > 1000) {
     return (
-      <div className="p-4 bg-yellow-50 border border-yellow-200 rounded text-yellow-800">
+      <div className="p-4 bg-ivory border border-mist rounded-lg text-brass">
         Forecast data points exceed safety limit (1000). Chart rendering bypassed to preserve performance. Please refer to the table below.
       </div>
     );
@@ -23,8 +23,8 @@ export const SimulationForecastChart = ({ forecasts }: Props) => {
       type: 'line',
       data: forecasts.map(f => [f.targetDate, f.predictedValue]),
       smooth: true,
-      lineStyle: { width: 2, color: '#3b82f6' },
-      itemStyle: { color: '#3b82f6' }
+      lineStyle: { width: 2, color: '#ff682c' },
+      itemStyle: { color: '#ff682c' }
     },
     {
       name: 'Lower Bound',
@@ -40,7 +40,7 @@ export const SimulationForecastChart = ({ forecasts }: Props) => {
       type: 'line',
       data: forecasts.map(f => [f.targetDate, f.confidenceUpper - f.confidenceLower]),
       lineStyle: { opacity: 0 },
-      areaStyle: { color: '#bfdbfe', opacity: 0.3 },
+      areaStyle: { color: '#ff682c', opacity: 0.08 },
       stack: 'confidence-band',
       symbol: 'none',
       itemStyle: { color: 'transparent' }

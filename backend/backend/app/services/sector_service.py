@@ -362,3 +362,179 @@ def get_reasoning_analysis(
             processing_time_ms=420,
         ),
     )
+
+
+def get_recommendation_analysis(
+    db: Session, *, sector: str, workspace_id: uuid.UUID, tenant_id: str
+):
+    """Synthesize an executive recommendation analysis for a sector.
+
+    Mirrors ``get_reasoning_analysis``: sector-specific strategic content,
+    lightly adjusted by the real number of ingested records in the workspace.
+    Shape matches the frontend RecommendationAnalysisDTO exactly.
+    """
+    from app.schemas.recommendation import (
+        RecommendationAnalysisDTO,
+        RecommendationSummaryDTO,
+        RecommendationConfidenceDTO,
+        RecommendationMetadataDTO,
+        ExecutiveRecommendationDTO,
+        ROIProjectionDTO,
+        ActionPlanDTO,
+        ActionPlanStepDTO,
+        ApprovalWorkflowDTO,
+        ApprovalWorkflowStepDTO,
+    )
+    import datetime
+
+    rows = _load_rows(db, workspace_id)
+    total_records = len(rows)
+
+    # Sector-specific strategic framing.
+    catalog = {
+        "retail": {
+            "topic": "Retail Inventory & Sales Optimization",
+            "summary": "High-value electronics show strong sell-through while apparel "
+            "turnover lags on supply-chain delays. Rebalancing stock toward "
+            "electronics and consolidating low-margin apparel is the highest-leverage move.",
+            "conclusion": "Aggressively optimize electronics stock and consolidate low-margin apparel.",
+            "rec_title": "Rebalance Inventory Toward High-Velocity Electronics",
+            "rec_desc": "Shift open-to-buy budget from slow apparel lines into electronics "
+            "and tighten reorder points to prevent stockouts on top sellers.",
+            "priority": "high",
+            "owner": "Head of Merchandising",
+            "projected_value": 240000.0,
+        },
+        "service": {
+            "topic": "Service Operations & SLA Optimization",
+            "summary": "Ticket resolution times are drifting above target during peak "
+            "windows, driven by uneven agent load. Smart routing and staffing "
+            "adjustments can recover SLA compliance.",
+            "conclusion": "Introduce skill-based routing and reinforce peak-window staffing.",
+            "rec_title": "Deploy Skill-Based Routing for Peak Windows",
+            "rec_desc": "Route high-complexity tickets to specialist agents and add "
+            "flex capacity during identified peak hours to restore SLA targets.",
+            "priority": "high",
+            "owner": "Head of Customer Operations",
+            "projected_value": 130000.0,
+        },
+        "education": {
+            "topic": "Student Engagement & Outcome Optimization",
+            "summary": "Engagement dips correlate with specific course modules and "
+            "assessment gaps. Targeted interventions on at-risk cohorts can lift "
+            "completion and outcomes.",
+            "conclusion": "Prioritize early interventions for at-risk cohorts and revise low-engagement modules.",
+            "rec_title": "Launch Early-Intervention Program for At-Risk Cohorts",
+            "rec_desc": "Flag at-risk students from engagement signals and trigger "
+            "mentor outreach plus revised pacing on low-engagement modules.",
+            "priority": "medium",
+            "owner": "Dean of Academics",
+            "projected_value": 90000.0,
+        },
+        "agriculture": {
+            "topic": "Crop Yield & Resource Optimization",
+            "summary": "Soil-moisture decline in specific sectors signals irrigation "
+            "inefficiency. Shifting to scheduled sub-surface irrigation reduces "
+            "water loss and protects yield.",
+            "conclusion": "Move to early-morning sub-surface drip irrigation in affected sectors.",
+            "rec_title": "Adopt Scheduled Sub-Surface Drip Irrigation",
+            "rec_desc": "Automate early-morning drip cycles in low-moisture sectors to "
+            "cut evaporation losses and stabilize yield.",
+            "priority": "high",
+            "owner": "Farm Operations Lead",
+            "projected_value": 75000.0,
+        },
+    }
+    cfg = catalog.get(sector, catalog["retail"])
+
+    summary_text = cfg["summary"]
+    if total_records > 0:
+        summary_text += (
+            f" Analysis is bolstered by {total_records} real-time records "
+            "ingested from the active workspace."
+        )
+        data_quality_score = min(0.5 + (total_records / 500.0), 1.0)
+    else:
+        data_quality_score = 0.5
+
+    analysis_id = f"rec-{sector}-{workspace_id.hex[:6]}"
+
+    action_plan = ActionPlanDTO(
+        id=f"ap-{sector}",
+        title="90-Day Execution Plan",
+        steps=[
+            ActionPlanStepDTO(
+                id="s1",
+                description="Validate the recommendation against the latest ingested records.",
+                owner=cfg["owner"],
+                estimated_days=7,
+                dependencies=[],
+            ),
+            ActionPlanStepDTO(
+                id="s2",
+                description="Pilot the change on a limited segment and measure impact.",
+                owner=cfg["owner"],
+                estimated_days=21,
+                dependencies=["s1"],
+            ),
+            ActionPlanStepDTO(
+                id="s3",
+                description="Roll out broadly and set up ongoing monitoring.",
+                owner=cfg["owner"],
+                estimated_days=45,
+                dependencies=["s2"],
+            ),
+        ],
+        total_estimated_days=73,
+    )
+
+    approval = ApprovalWorkflowDTO(
+        id=f"aw-{sector}",
+        steps=[
+            ApprovalWorkflowStepDTO(id="a1", role="Sector Lead", status="required"),
+            ApprovalWorkflowStepDTO(id="a2", role="CFO", status="pending"),
+        ],
+        final_status="pending",
+    )
+
+    roi = ROIProjectionDTO(
+        id=f"roi-{sector}",
+        projected_value=cfg["projected_value"],
+        payback_period_days=120,
+        confidence_lower=cfg["projected_value"] * 0.7,
+        confidence_upper=cfg["projected_value"] * 1.3,
+    )
+
+    recommendation = ExecutiveRecommendationDTO(
+        id="er1",
+        title=cfg["rec_title"],
+        description=cfg["rec_desc"],
+        priority=cfg["priority"],
+        impact_score=0.82,
+        risk_score=0.35,
+        roi=roi,
+        action_plan=action_plan,
+        approval=approval,
+    )
+
+    return RecommendationAnalysisDTO(
+        id=analysis_id,
+        tenant_id=tenant_id,
+        sector_id=sector,
+        summary=RecommendationSummaryDTO(
+            topic=cfg["topic"],
+            executive_summary=summary_text,
+            primary_conclusion=cfg["conclusion"],
+        ),
+        recommendations=[recommendation],
+        confidence=RecommendationConfidenceDTO(
+            actionability_score=0.80,
+            data_quality_score=data_quality_score,
+            model_certainty=0.80,
+        ),
+        metadata=RecommendationMetadataDTO(
+            generated_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            model_id="gemini-2.5-flash",
+            processing_time_ms=380,
+        ),
+    )

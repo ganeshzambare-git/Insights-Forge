@@ -26,7 +26,10 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'insight-auth-storage',
-      storage: createJSONStorage(() => sessionStorage),
+      // localStorage (not sessionStorage) so the session survives page
+      // reloads, new tabs and browser restarts. The access token silently
+      // refreshes via the 7-day rotating refresh token (see apiClient).
+      storage: createJSONStorage(() => localStorage),
     }
   )
 )

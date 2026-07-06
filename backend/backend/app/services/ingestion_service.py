@@ -65,9 +65,17 @@ def _rows_from_xlsx(raw: bytes) -> list[dict]:
 def _rows_from_bytes(raw: bytes, filename: str, content_type: str | None) -> list[dict]:
     name = (filename or "").lower()
 
-    # Excel detection
-    is_xlsx = name.endswith(".xlsx") or (content_type or "") in (
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    # Excel detection: by extension, mimetype, or ZIP/OOXML magic bytes.
+    # .xlsx is a ZIP container, so it always starts with the local-file-header
+    # signature b"PK\x03\x04".
+    is_xlsx = (
+        name.endswith(".xlsx")
+        or (content_type or "")
+        in (
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.ms-excel",
+        )
+        or raw[:4] == b"PK\x03\x04"
     )
     if is_xlsx:
         return _rows_from_xlsx(raw)

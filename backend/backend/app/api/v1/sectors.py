@@ -15,8 +15,10 @@ from app.db.session import get_db
 from app.models.record import Record
 from app.schemas.record import RecordOut, RecordsPage
 from app.schemas.sector import GeoFeatureCollection, ScorecardOut, TimeseriesOut
+from app.schemas.profile import DataProfileOut
 from app.schemas.reasoning import ReasoningAnalysisDTO
-from app.services import sector_service
+from app.schemas.recommendation import RecommendationAnalysisDTO
+from app.services import profile_service, sector_service
 
 router = APIRouter(prefix="/sectors", tags=["Sectors"])
 
@@ -42,6 +44,19 @@ def get_scorecard(
 ) -> ScorecardOut:
     workspace_id = ensure_sector(current, sector)
     return sector_service.scorecard(db, sector=sector, workspace_id=workspace_id)
+
+
+@router.get("/{sector}/analytics/profile", response_model=DataProfileOut)
+def get_data_profile(
+    sector: str = _SectorPath,
+    current: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> DataProfileOut:
+    """Auto-generated Data Observatory: a chart + plain-language description
+    for every profiled column of the workspace's ingested records.
+    Additive endpoint — the frozen contract is untouched."""
+    workspace_id = ensure_sector(current, sector)
+    return profile_service.profile(db, sector=sector, workspace_id=workspace_id)
 
 
 @router.get("/{sector}/timeseries", response_model=TimeseriesOut)
@@ -122,6 +137,18 @@ def get_reasoning(
 ) -> ReasoningAnalysisDTO:
     workspace_id = ensure_sector(current, sector)
     return sector_service.get_reasoning_analysis(
+        db, sector=sector, workspace_id=workspace_id, tenant_id=str(current.organization_id)
+    )
+
+
+@router.get("/{sector}/recommendation", response_model=RecommendationAnalysisDTO)
+def get_recommendation(
+    sector: str = _SectorPath,
+    current: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> RecommendationAnalysisDTO:
+    workspace_id = ensure_sector(current, sector)
+    return sector_service.get_recommendation_analysis(
         db, sector=sector, workspace_id=workspace_id, tenant_id=str(current.organization_id)
     )
 

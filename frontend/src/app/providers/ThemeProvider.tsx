@@ -8,7 +8,7 @@ interface ThemeProviderState {
 }
 
 const initialState: ThemeProviderState = {
-  theme: 'dark', // Insight Forge defaults to dark mode Enterprise OS
+  theme: 'light', // Ventriloc editorial system — light theme only
   setTheme: () => null,
 };
 
@@ -16,7 +16,7 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
 export function ThemeProvider({
   children,
-  defaultTheme = 'dark',
+  defaultTheme = 'light',
 }: {
   children: React.ReactNode;
   defaultTheme?: Theme;

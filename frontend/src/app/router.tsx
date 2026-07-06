@@ -15,14 +15,9 @@ import type { UserRole } from '@/types/auth';
 import type { ApiErrorResponse } from '@/types/api';
 
 // Lazy load feature pages
-const DashboardPage = React.lazy(() => import('@/features/dashboard/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const DatasetPage = React.lazy(() => import('@/features/dataset/pages/DatasetPage').then(m => ({ default: m.DatasetPage })));
-const ReasoningPage = React.lazy(() => import('@/features/reasoning/pages/ReasoningPage').then(m => ({ default: m.ReasoningPage })));
-const SimulationPage = React.lazy(() => import('@/features/simulation/pages/SimulationPage').then(m => ({ default: m.SimulationPage })));
 const ReportingPage = React.lazy(() => import('@/features/reports/pages/ReportingPage').then(m => ({ default: m.ReportingPage })));
-const RecommendationPage = React.lazy(() => import('@/features/recommendation/pages/RecommendationPage').then(m => ({ default: m.RecommendationPage })));
-const GovernancePage = React.lazy(() => import('@/features/governance/pages/GovernancePage').then(m => ({ default: m.GovernancePage })));
-const ChatPage = React.lazy(() => import('@/features/chat/pages/ChatPage').then(m => ({ default: m.ChatPage })));
+const WorkspacePage = React.lazy(() => import('@/pages/WorkspacePage').then(m => ({ default: m.WorkspacePage })));
 
 // INF-13: Hierarchical Error Boundaries
 function RouteErrorBoundary() {
@@ -342,14 +337,13 @@ const router = createBrowserRouter([
         path: ':sector_id',
         errorElement: <RouteErrorBoundary />,
         children: [
-          { path: 'dashboard', element: <SuspenseBoundary><DashboardPage /></SuspenseBoundary> },
           { path: 'datasets', element: <SuspenseBoundary><DatasetPage /></SuspenseBoundary> },
-          { path: 'reasoning', element: <SuspenseBoundary><ReasoningPage /></SuspenseBoundary> },
-          { path: 'simulations', element: <SuspenseBoundary><SimulationPage /></SuspenseBoundary> },
-          { path: 'recommendation', element: <SuspenseBoundary><RecommendationPage /></SuspenseBoundary> },
           { path: 'reports', element: <SuspenseBoundary><ReportingPage /></SuspenseBoundary> },
-          { path: 'admin', element: <SuspenseBoundary><GovernancePage /></SuspenseBoundary> },
-          { path: 'chat', element: <SuspenseBoundary><ChatPage /></SuspenseBoundary> },
+          // Every operating system (dashboard/reasoning/simulations/
+          // recommendation/chat/admin) renders the SAME single scrollable
+          // workspace page; the :os segment only picks the section to scroll
+          // to. One route object => no remount between sections.
+          { path: ':os', element: <SuspenseBoundary><WorkspacePage /></SuspenseBoundary> },
         ]
       }
     ],

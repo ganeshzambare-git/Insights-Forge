@@ -5,7 +5,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useChatStore } from '@/store/chatStore';
 import { apiClient } from '@/services/apiClient';
-import { Send, Bot, Sparkles, User, AlertCircle } from 'lucide-react';
+import { Bot, Sparkles, User, AlertCircle } from 'lucide-react';
+import { AIChatInput } from '@/components/ui/ai-chat-input';
 import type { Message } from '@/store/chatStore';
 
 export const ChatPage: React.FC = () => {
@@ -79,16 +80,12 @@ export const ChatPage: React.FC = () => {
     }
   };
 
-  const handleSuggestionClick = (suggestion: string) => {
-    setInput(suggestion);
-  };
-
   return (
     <OSLayout title="AI Assistant Command Center" description="Data-grounded chat powered by Gemini LLM">
       <OSSection title="AI Chat Terminal" description="Query your ingested tenant datasets securely with tenant isolation and prompt injection safety.">
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 items-start">
           {/* Main Chat Interface */}
-          <div className="xl:col-span-3 flex flex-col h-[650px] border border-border/50 bg-card rounded-xl overflow-hidden shadow-2xl">
+          <div className="xl:col-span-3 flex flex-col h-[650px] bg-card rounded-[20px] overflow-hidden">
             {/* Header controls */}
             <div className="bg-muted/40 border-b border-border/40 p-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
               <div className="flex items-center gap-3">
@@ -127,34 +124,12 @@ export const ChatPage: React.FC = () => {
                   )}
 
                   <div className={`flex flex-col gap-1.5 max-w-[85%] ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
-                    <div className={`rounded-xl p-4 text-sm leading-relaxed shadow-sm ${
+                    <div className={`rounded-xl p-4 text-sm leading-relaxed ${
                       m.role === 'user'
                         ? 'bg-brand-primary text-white rounded-tr-none'
                         : 'bg-muted/50 text-foreground border border-border/40 rounded-tl-none'
                     }`}>
                       <p className="whitespace-pre-line">{m.content}</p>
-
-                      {m.agentRole && (
-                        <div className="mt-3 pt-2.5 border-t border-border/30 flex gap-2 flex-wrap items-center">
-                          <span className="text-xs text-muted-foreground bg-card/60 border border-border/40 px-2 py-0.5 rounded font-mono">
-                            {m.agentRole}
-                          </span>
-                          {m.analysisType && (
-                            <span className="text-xs text-brand-primary bg-brand-primary/10 border border-brand-primary/20 px-2 py-0.5 rounded font-mono">
-                              {m.analysisType}
-                            </span>
-                          )}
-                          <span className={`text-xs px-2 py-0.5 rounded font-mono ${
-                            m.confidence === 'VERY_HIGH' || m.confidence === 'HIGH'
-                              ? 'text-brand-success bg-brand-success/10 border border-brand-success/20'
-                              : m.confidence === 'MEDIUM'
-                              ? 'text-brand-warning bg-brand-warning/10 border border-brand-warning/20'
-                              : 'text-brand-error bg-brand-error/10 border border-brand-error/20'
-                          }`}>
-                            {m.confidence} Confidence
-                          </span>
-                        </div>
-                      )}
                     </div>
                   </div>
 
@@ -187,61 +162,25 @@ export const ChatPage: React.FC = () => {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Form */}
-            <div className="p-4 border-t border-border/50 bg-muted/20 flex gap-3">
-              <input
-                type="text"
-                disabled={isTyping}
-                className="flex-1 border border-border bg-card text-foreground rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary/50 disabled:opacity-50"
-                placeholder="Ask a question about your ingested data (e.g. 'What is the average revenue?')"
+            {/* Input — animated pill with ghost-typed prompts */}
+            <div className="p-4 border-t border-border/50 bg-muted/20">
+              <AIChatInput
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                onChange={setInput}
+                onSend={handleSend}
+                disabled={isTyping}
+                suggestions={[
+                  'How many records are in this dataset?',
+                  'What is the total revenue in this dataset?',
+                  'What is the average revenue in this dataset?',
+                  'Summarize the most important insights.',
+                ]}
               />
-              <Button onClick={handleSend} disabled={isTyping} className="shrink-0">
-                <Send size={18} />
-              </Button>
             </div>
           </div>
 
           {/* Quick Prompts Panel */}
           <div className="space-y-6">
-            <Card>
-              <CardContent className="pt-6">
-                <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">Suggested Queries</h3>
-                <div className="space-y-2.5">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left text-xs whitespace-normal h-auto py-2.5"
-                    onClick={() => handleSuggestionClick('How many records are in this dataset?')}
-                  >
-                    How many records are in this dataset?
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left text-xs whitespace-normal h-auto py-2.5"
-                    onClick={() => handleSuggestionClick('What is the total revenue in this dataset?')}
-                  >
-                    What is the total revenue in this dataset?
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left text-xs whitespace-normal h-auto py-2.5"
-                    onClick={() => handleSuggestionClick('What is the average revenue in this dataset?')}
-                  >
-                    What is the average revenue in this dataset?
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left text-xs whitespace-normal h-auto py-2.5"
-                    onClick={() => handleSuggestionClick('Summarize the most important insights.')}
-                  >
-                    Summarize the most important insights.
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
             <Card>
               <CardContent className="pt-6 text-xs text-muted-foreground space-y-2">
                 <h3 className="font-bold text-foreground mb-1 uppercase tracking-wider">AI Guardrails</h3>

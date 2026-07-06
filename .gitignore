@@ -142,3 +142,14 @@ Thumbs.db
 brain/
 *.csv
 !sample.csv
+
+# Secrets & local runtime state (never commit)
+.env
+.env.*
+!.env.example
+uploads/
+*.rdb
+test_token.txt
+audit_log.json
+vector_db/
+.impeccable/

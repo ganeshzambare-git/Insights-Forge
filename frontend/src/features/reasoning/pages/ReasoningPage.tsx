@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { OSLayout } from '@/components/layout/OSLayout';
 import { OSSection } from '@/components/layout/OSSection';
 import { useReasoning } from '../hooks/useReasoning';
@@ -7,17 +7,11 @@ import { ReasoningLoadingState } from '../components/ReasoningLoadingState';
 import { ReasoningErrorState } from '../components/ReasoningErrorState';
 import { ReasoningEmptyState } from '../components/ReasoningEmptyState';
 import { ReasoningSummary } from '../components/ReasoningSummary';
-import { ReasoningInsights } from '../components/ReasoningInsights';
-import { ReasoningFactors } from '../components/ReasoningFactors';
-import { EvidenceGraph } from '../components/EvidenceGraph';
-import { EvidenceInspector } from '../components/EvidenceInspector';
-import { RecommendationPanel } from '../components/RecommendationPanel';
-import type { ReasoningEvidence } from '@/types/reasoning';
+import { ReasoningOrbit } from '../components/ReasoningOrbit';
 
 export const ReasoningPage: React.FC = () => {
   const { tenantId, sectorId } = useTenantStore();
   const { data, isLoading, isError } = useReasoning(tenantId, sectorId);
-  const [selectedEvidence, setSelectedEvidence] = useState<ReasoningEvidence | null>(null);
 
   if (!tenantId || !sectorId) {
     return <ReasoningEmptyState />;
@@ -32,43 +26,26 @@ export const ReasoningPage: React.FC = () => {
   }
 
   return (
-    <>
-      <OSLayout title="AI Reasoning OS" description={`Causal intelligence for ${sectorId}`}>
-        
-        {/* SUMMARY SECTION */}
-        <OSSection title="Executive Overview" description="High-level reasoning summary">
-          <ReasoningSummary summary={data.summary} confidenceScore={data.confidence.overallScore} />
-        </OSSection>
+    <OSLayout title="AI Reasoning OS" description={`Causal intelligence for ${sectorId}`}>
+      {/* SUMMARY SECTION */}
+      <OSSection title="Executive Overview" description="High-level reasoning summary">
+        <ReasoningSummary summary={data.summary} confidenceScore={data.confidence.overallScore} />
+      </OSSection>
 
-        {/* ROOT CAUSE ANALYSIS */}
-        <OSSection title="Root Cause Analysis" description="Factors and insights driving current anomalies">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ReasoningInsights insights={data.insights} />
-            <ReasoningFactors factors={data.factors} />
-          </div>
-        </OSSection>
-
-        {/* EVIDENCE GRAPH */}
-        <OSSection title="Evidence Knowledge Graph" description="Causal network of reliable nodes">
-          <EvidenceGraph 
-            nodes={data.evidenceNodes} 
-            edges={data.evidenceEdges} 
-            onNodeClick={setSelectedEvidence} 
-          />
-        </OSSection>
-
-        {/* RECOMMENDATION SECTION */}
-        <OSSection title="Suggested Actions" description="Bridge to simulation and mitigation">
-          <RecommendationPanel recommendations={data.recommendations} />
-        </OSSection>
-
-      </OSLayout>
-
-      {/* INSPECTOR PANEL */}
-      <EvidenceInspector 
-        evidence={selectedEvidence} 
-        onClose={() => setSelectedEvidence(null)} 
-      />
-    </>
+      {/* CAUSAL ORBIT — insights, factors, evidence and actions as an
+          interactive orbital map. Click a node for its detail card;
+          related causal nodes pulse. */}
+      <OSSection
+        title="Causal Intelligence Orbit"
+        description="Insights → factors → evidence → actions, in one interactive view"
+      >
+        <ReasoningOrbit
+          insights={data.insights}
+          factors={data.factors}
+          evidence={data.evidenceNodes}
+          recommendations={data.recommendations}
+        />
+      </OSSection>
+    </OSLayout>
   );
 };

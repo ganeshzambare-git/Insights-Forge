@@ -24,6 +24,21 @@ from app.core.llm.token_counter import TokenCounter
 logger = logging.getLogger("gemini-provider")
 
 
+def _gemini_error_message(exc: Exception) -> str:
+    """Map a Gemini SDK exception to a clear, user-facing message.
+
+    Distinguishes rate-limit/quota (429) from a genuine outage so users on the
+    free tier understand the assistant is working but the API quota is spent.
+    """
+    text = str(exc)
+    if "429" in text or "RESOURCE_EXHAUSTED" in text or "quota" in text.lower():
+        return (
+            "The AI service hit its request quota (rate limit). This is a limit on "
+            "the Gemini API key, not your data. Please wait a moment and try again."
+        )
+    return "The Gemini AI service is currently unavailable. Please try again shortly."
+
+
 class GeminiProvider(LLMProvider):
     """
     Google Gemini implementation of LLMProvider using the google-genai SDK.
@@ -159,7 +174,7 @@ class GeminiProvider(LLMProvider):
             logger.error(f"Gemini request failed: {str(e)}")
             return LLMResponse(
                 status="error",
-                content="The Gemini AI service is currently unavailable. Please try again shortly.",
+                content=_gemini_error_message(e),
                 error_details=str(e),
                 model=self.model,
                 provider="gemini",
@@ -213,7 +228,7 @@ class GeminiProvider(LLMProvider):
         except Exception as e:
             logger.error(f"Gemini streaming failed: {str(e)}")
             yield LLMChunk(
-                text="The Gemini AI service is currently unavailable. Please try again shortly.",
+                text=_gemini_error_message(e),
                 finished=True,
                 finish_reason="error",
                 model=self.model,

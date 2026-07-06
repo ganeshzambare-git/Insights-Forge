@@ -11,7 +11,7 @@ export const IntelligencePanel: React.FC = () => {
 
   return (
     <div className={cn(
-      "fixed right-0 top-16 bottom-0 w-80 bg-card border-l border-border shadow-xl z-40 transition-transform duration-300",
+      "fixed right-0 top-16 bottom-0 w-80 bg-card border-l border-border z-40 transition-transform duration-300",
       "flex flex-col overflow-hidden"
     )}>
       {/* Header */}

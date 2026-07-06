@@ -1028,20 +1028,46 @@
             margin-bottom: 48px;
         }
 
-        .testimonials-track {
+        /* Vertical marquee columns — each column loops at its own speed,
+           edges fade out via mask, pause on hover. */
+        .testimonials-columns {
             display: flex;
+            justify-content: center;
             gap: 24px;
-            animation: scrollTestimonials 30s linear infinite;
-            width: max-content;
+            max-height: 620px;
+            overflow: hidden;
+            -webkit-mask-image: linear-gradient(to bottom, transparent, black 12%, black 88%, transparent);
+            mask-image: linear-gradient(to bottom, transparent, black 12%, black 88%, transparent);
         }
 
-        .testimonials:hover .testimonials-track {
+        .t-col { overflow: hidden; }
+
+        .t-col-inner {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            padding-bottom: 24px; /* matches gap so the -50% loop is seamless */
+            animation: scrollTestimonialsY var(--scroll-duration, 18s) linear infinite;
+        }
+
+        .testimonials:hover .t-col-inner {
             animation-play-state: paused;
         }
 
-        @keyframes scrollTestimonials {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
+        @keyframes scrollTestimonialsY {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-50%); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .t-col-inner { animation: none; }
+        }
+
+        @media (max-width: 1020px) {
+            .testimonials-columns .t-col:nth-child(3) { display: none; }
+        }
+        @media (max-width: 680px) {
+            .testimonials-columns .t-col:nth-child(2) { display: none; }
         }
 
         .testimonial-card {
@@ -1049,9 +1075,9 @@
             border-radius: 8px;
             padding: 32px;
             border: 1px solid var(--color-chalk);
-            width: 380px;
+            width: 340px;
             flex-shrink: 0;
-            transition: all 0.3s ease;
+            transition: border-color 0.3s ease;
         }
 
         .testimonial-card:hover {

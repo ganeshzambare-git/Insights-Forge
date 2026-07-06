@@ -38,7 +38,7 @@ export const ForecastPanel: React.FC<ForecastPanelProps> = ({ forecasts }) => {
         type: 'line' as const,
         data: upper.map((u, i) => u - lower[i]),
         lineStyle: { opacity: 0 },
-        areaStyle: { color: '#2563EB', opacity: 0.1 },
+        areaStyle: { color: '#ff682c', opacity: 0.08 },
         stack: 'confidence-band',
         symbol: 'none'
       },
@@ -46,7 +46,7 @@ export const ForecastPanel: React.FC<ForecastPanelProps> = ({ forecasts }) => {
         name: metricName,
         type: 'line' as const,
         data: predicted,
-        itemStyle: { color: '#2563EB' },
+        itemStyle: { color: '#ff682c' },
         smooth: true
       }
     ]

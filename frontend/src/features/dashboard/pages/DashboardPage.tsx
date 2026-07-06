@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
-import type { EChartsOption } from 'echarts';
 import { useDashboard } from '../hooks/useDashboard';
 import { useGeo } from '../hooks/useGeo';
-import { BaseChart } from '@/components/charts/BaseChart';
 import { ingestionClient } from '@/features/dataset/api/ingestionClient';
 import { useTenantStore } from '@/store/tenantStore';
+import { useQueryClient } from '@tanstack/react-query';
+import { DataObservatory } from '../components/DataObservatory';
+import { OverviewPanel } from '../components/OverviewPanel';
 
 // Per-sector copy mirrored from the marketing landing page so the dashboard
 // header matches each sector's identity (Retail / Service / Education / Agriculture).
@@ -27,17 +28,32 @@ const SECTOR_META: Record<string, { title: string; eyebrow: string }> = {
   },
 };
 
-const ACCENT = '#ff682c';
 
 export const DashboardPage: React.FC = () => {
   const { data, isLoading, isError, refetch } = useDashboard();
   const { data: geo } = useGeo();
   const { sectorId: storeSectorId } = useTenantStore();
+  const { tenantId } = useTenantStore();
+  const queryClient = useQueryClient();
 
   const [uploadState, setUploadState] = useState<'initial' | 'uploading' | 'processing' | 'success' | 'error'>('initial');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState<string>('');
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const acceptFile = (file: File | undefined) => {
+    if (!file) return;
+    setSelectedFile(file);
+    setUploadState('initial');
+    setUploadError('');
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    acceptFile(e.dataTransfer.files?.[0]);
+  };
 
   const sectorId = storeSectorId || (data?.sectorId || '').toLowerCase();
   const meta = SECTOR_META[sectorId] || {
@@ -63,62 +79,24 @@ export const DashboardPage: React.FC = () => {
       } else {
          setUploadState('success');
       }
-      refetch();
+      // Ingestion is async on the backend — the records land a few seconds
+      // after the upload response. Invalidate every query for this
+      // tenant+sector now AND on a short retry schedule so KPIs, charts and
+      // the Data Observatory refresh on their own (no manual page reload).
+      const refreshAll = () => {
+        refetch();
+        if (tenantId && sectorId) {
+          queryClient.invalidateQueries({ queryKey: [tenantId, sectorId] });
+        }
+      };
+      refreshAll();
+      [4000, 9000, 16000].forEach((delay) => setTimeout(refreshAll, delay));
     } catch (error) {
       console.error('Upload failed', error);
       setUploadState('error');
       setUploadError('Upload failed. Please check the file and try again.');
     }
   };
-
-  const chartOption: EChartsOption | null =
-    data && data.timeseries.labels.length > 0
-      ? {
-          grid: { left: 44, right: 20, top: 24, bottom: 32 },
-          tooltip: { trigger: 'axis' },
-          legend: {
-            show: data.timeseries.series.length > 1,
-            top: 0,
-            textStyle: { color: '#4d4d4d' },
-          },
-          xAxis: {
-            type: 'category',
-            data: data.timeseries.labels,
-            axisLine: { lineStyle: { color: '#e8e8e8' } },
-            axisLabel: { color: '#828282' },
-          },
-          yAxis: {
-            type: 'value',
-            splitLine: { lineStyle: { color: '#efefef' } },
-            axisLabel: { color: '#828282' },
-          },
-          color: [ACCENT, '#816729', '#202020'],
-          series: data.timeseries.series.map((s, i) => ({
-            name: s.name,
-            type: 'line',
-            smooth: true,
-            showSymbol: false,
-            data: s.values,
-            lineStyle: { width: 3 },
-            areaStyle:
-              i === 0
-                ? {
-                    color: {
-                      type: 'linear',
-                      x: 0,
-                      y: 0,
-                      x2: 0,
-                      y2: 1,
-                      colorStops: [
-                        { offset: 0, color: 'rgba(255,104,44,0.22)' },
-                        { offset: 1, color: 'rgba(255,104,44,0)' },
-                      ],
-                    },
-                  }
-                : undefined,
-          })),
-        }
-      : null;
 
   return (
     <div className="sector-dash">
@@ -148,15 +126,30 @@ export const DashboardPage: React.FC = () => {
             onChange={handleFileChange}
           />
           {uploadState === 'initial' || uploadState === 'error' ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <button 
-                onClick={() => fileInputRef.current?.click()}
-                style={{ padding: '8px 16px', background: 'var(--mist)', border: '1px solid var(--chalk)', borderRadius: '6px', cursor: 'pointer', fontWeight: 500 }}
-              >
-                Choose a CSV or Excel file
-              </button>
+            <>
               <span className="sd-note" style={{ padding: 0 }}>Supported formats: CSV and Excel (.xlsx)</span>
-            </div>
+              <div
+                role="button"
+                tabIndex={0}
+                aria-label="Upload a CSV or Excel file"
+                className={`sd-drop${isDragging ? ' is-dragging' : ''}`}
+                onClick={() => fileInputRef.current?.click()}
+                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && fileInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleDrop}
+              >
+                <span className="sd-drop-icon" aria-hidden>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                </span>
+                <span className="sd-drop-title">Click to select</span>
+                <span className="sd-drop-sub">or drag and drop file here</span>
+              </div>
+            </>
           ) : null}
 
           {selectedFile && (
@@ -201,35 +194,18 @@ export const DashboardPage: React.FC = () => {
 
       {data && (
         <>
-          {/* KPIs */}
+          {/* Performance Overview — filters rail, KPI deltas, forecast, mix, table */}
           <section className="sd-section">
-            <h2 className="sd-section-title">Operating metrics</h2>
-            <div className="sd-kpi-grid">
-              {data.kpis.map((kpi) => (
-                <div key={kpi.id} className="sd-kpi">
-                  <span className="sd-kpi-accent" />
-                  <p className="sd-kpi-label">{kpi.title}</p>
-                  <p className="sd-kpi-value">
-                    {kpi.unit === '$' ? '$' : ''}
-                    {kpi.value.toLocaleString()}
-                    {kpi.unit && kpi.unit !== '$' ? kpi.unit : ''}
-                  </p>
-                </div>
-              ))}
-              {data.kpis.length === 0 && <div className="sd-note">No KPIs yet for this sector.</div>}
-            </div>
+            <OverviewPanel sectorTitle={meta.title} />
           </section>
 
-          {/* Timeseries */}
+          {/* Data Observatory — auto-generated chart + description per column */}
           <section className="sd-section">
-            <h2 className="sd-section-title">Trends over time</h2>
-            <div className="sd-card">
-              {chartOption ? (
-                <BaseChart option={chartOption} theme="light" height="320px" />
-              ) : (
-                <div className="sd-note">No time-series data available.</div>
-              )}
-            </div>
+            <h2 className="sd-section-title">Data observatory</h2>
+            <p className="sd-eyebrow" style={{ marginTop: '-12px', marginBottom: '16px' }}>
+              Every profiled column of your uploaded data, charted and explained.
+            </p>
+            <DataObservatory />
           </section>
 
           {/* Geo */}
@@ -327,4 +303,125 @@ const DASH_THEME_CSS = `
 .sd-geo-cap { font-size: 15px; color: var(--graphite); }
 .sd-note { color: var(--slate); font-size: 15px; padding: 8px 0; }
 .sd-error { color: var(--signal-orange); }
+
+/* ---- Dropzone (Import Data) ---- */
+.sd-drop {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; padding: 44px 20px; cursor: pointer; text-align: center;
+  border: 1.5px dashed var(--chalk); border-radius: 12px; background: var(--paper);
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+.sd-drop:hover, .sd-drop.is-dragging {
+  border-color: var(--signal-orange);
+  background: var(--fog);
+}
+.sd-drop:focus-visible { outline: 2px solid rgba(255,104,44,0.4); outline-offset: 2px; }
+.sd-drop-icon {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--mist); color: var(--carbon); margin-bottom: 6px;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+.sd-drop:hover .sd-drop-icon, .sd-drop.is-dragging .sd-drop-icon {
+  background: var(--signal-orange); color: #fff;
+}
+.sd-drop-title { font-size: 14px; font-weight: 600; color: var(--carbon); }
+.sd-drop-sub { font-size: 13px; color: var(--slate); }
+
+/* ---- Staggered entrance: each card rises in ~90ms after the previous ---- */
+.sd-rise {
+  opacity: 0;
+  animation: sdRise 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: calc(var(--d, 0) * 90ms);
+}
+@keyframes sdRise {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sd-rise { animation: none; opacity: 1; }
+}
+.sd-obs-summary { font-size: 15px; color: var(--graphite); margin-bottom: 20px; max-width: 72ch; }
+.sd-obs-grid {
+  display: grid; gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+}
+.sd-obs-card { display: flex; flex-direction: column; gap: 10px; padding: 24px; }
+.sd-obs-title {
+  font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  font-size: 17px; font-weight: 600; letter-spacing: -0.3px; color: var(--carbon);
+}
+.sd-obs-chart { width: 100%; min-height: 260px; }
+.sd-obs-stats { display: flex; flex-wrap: wrap; gap: 8px; }
+.sd-obs-stat {
+  display: inline-flex; align-items: baseline; gap: 6px;
+  background: var(--fog); border: 1px solid var(--chalk);
+  border-radius: 20px; padding: 3px 12px; font-size: 12px;
+}
+.sd-obs-stat-k { color: var(--slate); text-transform: capitalize; }
+.sd-obs-stat-v { color: var(--carbon); font-weight: 600; }
+.sd-obs-desc { font-size: 14px; line-height: 1.5; color: var(--graphite); border-top: 1px solid var(--chalk); padding-top: 12px; }
+
+/* ---- Performance Overview (screenshot layout) ---- */
+.sd-ov { display: grid; grid-template-columns: 232px 1fr; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .sd-ov { grid-template-columns: 1fr; } }
+.sd-ov-filters { display: flex; flex-direction: column; gap: 14px; padding: 20px; }
+.sd-ov-filters-title {
+  font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--slate);
+}
+.sd-ov-field { display: flex; flex-direction: column; gap: 6px; }
+.sd-ov-field > span { font-size: 13px; color: var(--graphite); text-transform: capitalize; }
+.sd-ov-field select, .sd-ov-daterange {
+  background: var(--fog); border: 1px solid var(--chalk); border-radius: 8px;
+  padding: 8px 10px; font-size: 13px; color: var(--carbon); width: 100%;
+}
+.sd-ov-field select:focus { outline: 2px solid rgba(255,104,44,0.35); border-color: var(--signal-orange); }
+.sd-ov-main { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.sd-ov-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.sd-ov-title {
+  font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  font-size: 22px; font-weight: 600; letter-spacing: -0.4px; color: var(--carbon);
+}
+.sd-ov-sub { margin-top: 4px; font-size: 14px; color: var(--slate); }
+.sd-ov-live {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--paper); border: 1px solid var(--chalk); border-radius: 20px;
+  padding: 5px 14px; font-size: 13px; font-weight: 500; color: var(--carbon);
+}
+.sd-ov-live-dot { width: 8px; height: 8px; border-radius: 50%; background: #2e7d32; }
+.sd-ov-kpis { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.sd-ov-kpi {
+  background: var(--paper); border: 1px solid var(--chalk); border-radius: 14px; padding: 16px 18px;
+}
+.sd-ov-kpi.is-accent { border-color: var(--signal-orange); }
+.sd-ov-kpi-label { font-size: 13px; color: var(--slate); }
+.sd-ov-kpi-value {
+  margin-top: 8px;
+  font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  font-size: 28px; font-weight: 600; letter-spacing: -0.6px; color: var(--carbon);
+}
+.sd-ov-kpi-delta { margin-top: 6px; font-size: 12px; font-weight: 500; }
+.sd-ov-kpi-delta.is-up { color: #2e7d32; }
+.sd-ov-kpi-delta.is-down { color: var(--signal-orange); }
+.sd-ov-kpi-delta.is-flat { color: var(--slate); }
+.sd-ov-charts { display: grid; grid-template-columns: 3fr 2fr; gap: 20px; }
+@media (max-width: 1100px) { .sd-ov-charts { grid-template-columns: 1fr; } }
+.sd-ov-chartcard { padding: 18px 18px 8px; min-width: 0; }
+.sd-ov-card-title {
+  font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px; font-weight: 600; letter-spacing: -0.2px; color: var(--carbon);
+}
+.sd-ov-card-sub { font-size: 12px; color: var(--slate); margin: 2px 0 6px; }
+.sd-ov-tablecard { padding: 6px 18px 12px; overflow-x: auto; }
+.sd-ov-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.sd-ov-table th {
+  text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase;
+  color: var(--slate); padding: 12px 10px; border-bottom: 1px solid var(--chalk);
+}
+.sd-ov-table td { padding: 12px 10px; border-bottom: 1px solid var(--fog); color: var(--carbon); }
+.sd-ov-pill { display: inline-block; border-radius: 20px; padding: 3px 12px; font-size: 12px; font-weight: 500; }
+.sd-ov-pill.is-healthy { background: rgba(46,125,50,0.10); color: #2e7d32; }
+.sd-ov-pill.is-low { background: rgba(255,104,44,0.12); color: var(--signal-orange); }
+.sd-ov-pill.is-critical { background: rgba(179,64,42,0.12); color: #b3402a; }
+.sd-ov-tablenote { font-size: 12px; color: var(--slate); padding-top: 10px; }
 `;

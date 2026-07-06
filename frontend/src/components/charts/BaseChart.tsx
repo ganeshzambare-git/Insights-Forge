@@ -5,12 +5,12 @@ interface BaseChartProps {
   option: EChartsOption;
   style?: React.CSSProperties;
   className?: string;
-  theme?: 'light' | 'dark';
+  theme?: 'light' | 'dark' | 'ventriloc';
   height?: string;
   onEvents?: Record<string, (params: unknown) => void>;
 }
 
-export const BaseChart: React.FC<BaseChartProps> = React.memo(({ option, style, className, theme = 'dark', onEvents }) => {
+export const BaseChart: React.FC<BaseChartProps> = React.memo(({ option, style, className, theme = 'light', onEvents }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<ECharts | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -23,9 +23,35 @@ export const BaseChart: React.FC<BaseChartProps> = React.memo(({ option, style, 
       if (!chartRef.current) return;
       
       const echarts = await import('echarts');
-      
+
+      // Ventriloc editorial chart theme: monochrome grays, ember + brass strokes,
+      // white surfaces — charts read like a printed report, not a terminal.
+      echarts.registerTheme('ventriloc', {
+        color: ['#ff682c', '#816729', '#4d4d4d', '#828282', '#202020'],
+        backgroundColor: 'transparent',
+        textStyle: { color: '#4d4d4d', fontFamily: 'Inter, sans-serif' },
+        title: { textStyle: { color: '#202020', fontWeight: 400 } },
+        legend: { textStyle: { color: '#4d4d4d' } },
+        categoryAxis: {
+          axisLine: { lineStyle: { color: '#e8e8e8' } },
+          axisTick: { show: false },
+          axisLabel: { color: '#828282' },
+          splitLine: { lineStyle: { color: '#efefef' } },
+        },
+        valueAxis: {
+          axisLine: { show: false },
+          axisLabel: { color: '#828282' },
+          splitLine: { lineStyle: { color: '#efefef' } },
+        },
+        tooltip: {
+          backgroundColor: '#ffffff',
+          borderColor: '#e8e8e8',
+          textStyle: { color: '#202020' },
+        },
+      });
+
       if (!chartInstance.current) {
-        chartInstance.current = echarts.init(chartRef.current, theme, {
+        chartInstance.current = echarts.init(chartRef.current, 'ventriloc', {
           renderer: 'canvas',
           useDirtyRect: true, // Optimizes redrawing
         });

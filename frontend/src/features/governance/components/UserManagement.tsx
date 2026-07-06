@@ -39,7 +39,7 @@ export const UserManagement: React.FC<UserManagementProps> = ({ tenantId, role, 
     email: user.email,
     role: user.role.name,
     status: (
-      <span className={user.status === 'active' ? 'text-green-500' : 'text-red-500'}>
+      <span className={user.status === 'active' ? 'text-brand-success' : 'text-brand-error'}>
         {user.status}
       </span>
     ),

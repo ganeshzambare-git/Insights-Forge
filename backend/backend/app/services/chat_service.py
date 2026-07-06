@@ -6,6 +6,7 @@ structured prompt compilation, and streaming response generation.
 """
 
 import os
+import re
 import sys
 import logging
 import uuid
@@ -37,6 +38,38 @@ from app.core.llm.factory import LLMFactory  # noqa: E402
 from app.core.config import settings  # noqa: E402
 
 logger = logging.getLogger("chat-service")
+
+
+# A single clean, data-grounded system prompt used for every chat query.
+# We deliberately bypass the per-intent Llama-3 prompt templates in
+# chatbot/Apex-AI-main/prompts here: those are formatted for a Llama vLLM
+# pipeline with special tokens (<|eot_id|> etc.) and demand a JSON envelope,
+# which with Gemini leaks raw tokens/JSON into the reply. This prompt keeps
+# answers plain-language and strictly grounded in the user's ingested data.
+DATA_GROUNDED_SYSTEM_PROMPT = (
+    "You are the DecisIQ AI Analytics Assistant. Answer the user's question using "
+    "ONLY the workspace data provided in the context (a DATASET OVERVIEW with exact "
+    "totals and per-column statistics, plus RELEVANT RECORDS).\n\n"
+    "Rules:\n"
+    "- For counts, totals, sums, averages, min/max and 'which columns' questions, use "
+    "the exact figures from the DATASET OVERVIEW. 'Total records in workspace' is "
+    "authoritative for how many records exist.\n"
+    "- For specific look-ups, use the RELEVANT RECORDS.\n"
+    "- Never invent data, columns or numbers not present in the context. If the answer "
+    "is not in the ingested data, say so plainly.\n"
+    "- Reply in clear, concise plain language (short sentences or bullet points). Do NOT "
+    "output JSON, code fences, or any special tokens.\n"
+)
+
+# Special tokens from Llama-style templates that must never reach the user.
+_LEAKED_TOKEN_RE = re.compile(r"<\|[^|]*\|>")
+
+
+def _clean_response(text: str) -> str:
+    """Strip any leaked model/template control tokens from an answer."""
+    if not text:
+        return text
+    return _LEAKED_TOKEN_RE.sub("", text).strip()
 
 
 class ChatService:
@@ -131,16 +164,8 @@ class ChatService:
         analysis_type = routing_decision.get("analysis_type", "general")
         context_data = routing_decision.get("context", "")
 
-        rendered_prompt = self.prompt_engine.render_prompt(
-            analysis_type=analysis_type,
-            input_data=context_data,
-        )
-
-        if not rendered_prompt:
-            logger.warning(
-                f"Failed to load prompt template for: {analysis_type}. Using fallback."
-            )
-            rendered_prompt = f"Agent Context:\n{context_data}"
+        # Use one clean, data-grounded system prompt for every intent.
+        rendered_prompt = DATA_GROUNDED_SYSTEM_PROMPT
 
         # 4. Fetch memory states from database
         conversation = self.memory_service.get_conversation_by_id(
@@ -178,7 +203,7 @@ class ChatService:
         llm_res = self.llm_provider.generate(messages)
         latency_ms = int((time.time() - start_time) * 1000)
 
-        ai_response = llm_res.content or ""
+        ai_response = _clean_response(llm_res.content or "")
         ai_tokens = TokenCounter.estimate_tokens(ai_response)
 
         # 7. Persist AI message response
@@ -281,13 +306,8 @@ class ChatService:
         analysis_type = routing_decision.get("analysis_type", "general")
         context_data = routing_decision.get("context", "")
 
-        rendered_prompt = self.prompt_engine.render_prompt(
-            analysis_type=analysis_type,
-            input_data=context_data,
-        )
-
-        if not rendered_prompt:
-            rendered_prompt = f"Agent Context:\n{context_data}"
+        # Use one clean, data-grounded system prompt for every intent.
+        rendered_prompt = DATA_GROUNDED_SYSTEM_PROMPT
 
         # 4. Fetch memory states from database
         conversation = self.memory_service.get_conversation_by_id(
@@ -330,7 +350,7 @@ class ChatService:
                 # Inject prompt metadata into the chunk for the client
                 chunk.prompt_tokens = user_tokens
                 chunk.model = self.llm_provider.model
-                chunk.provider = "ollama"
+                chunk.provider = settings.LLM_PROVIDER
                 chunk.conversation_id = str(conversation_id)
 
                 yield chunk
@@ -368,9 +388,9 @@ class ChatService:
                         )
                         fresh_db.commit()
                         logger.info(
-                            "Ollama stream completion success",
+                            "LLM stream completion success",
                             extra={
-                                "provider": "ollama",
+                                "provider": settings.LLM_PROVIDER,
                                 "model": self.llm_provider.model,
                                 "prompt_tokens": user_tokens,
                                 "completion_tokens": ai_tokens,

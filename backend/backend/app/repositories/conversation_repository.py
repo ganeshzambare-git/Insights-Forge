@@ -7,7 +7,7 @@ Handles all database operations (CRUD and metrics) for the AIConversation model.
 import uuid
 import datetime
 from sqlalchemy import select, func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, lazyload
 from app.models.ai_conversation import AIConversation
 from app.models.enums import AIConversationStatus, AIModel
 
@@ -55,11 +55,18 @@ class ConversationRepository:
         """
         Retrieves a conversation by ID, enforcing tenant isolation.
         """
-        stmt = select(AIConversation).where(
-            AIConversation.id == conversation_id,
-            AIConversation.workspace_id == workspace_id,
-            AIConversation.organization_id == organization_id,
-            AIConversation.is_deleted.is_(False),
+        stmt = (
+            select(AIConversation)
+            .where(
+                AIConversation.id == conversation_id,
+                AIConversation.workspace_id == workspace_id,
+                AIConversation.organization_id == organization_id,
+                AIConversation.is_deleted.is_(False),
+            )
+            # Avoid the lazy="selectin" cascade (org/workspace/user/messages),
+            # which fires many round-trips over Neon and made chat hang ~45s+.
+            # Callers that need messages load them via MessageRepository.
+            .options(lazyload("*"))
         )
         return self.db.execute(stmt).scalar_one_or_none()
 
@@ -70,9 +77,16 @@ class ConversationRepository:
         """
         Retrieves a conversation by ID simply (for background tasks).
         """
-        stmt = select(AIConversation).where(
-            AIConversation.id == conversation_id,
-            AIConversation.is_deleted.is_(False),
+        stmt = (
+            select(AIConversation)
+            .where(
+                AIConversation.id == conversation_id,
+                AIConversation.is_deleted.is_(False),
+            )
+            # Avoid the lazy="selectin" cascade — this method is called on every
+            # save_user_message / save_ai_message; without lazyload it loaded all
+            # messages (and their relationships) and made chat hang ~45s+.
+            .options(lazyload("*"))
         )
         return self.db.execute(stmt).scalar_one_or_none()
 

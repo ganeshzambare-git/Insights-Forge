@@ -2,67 +2,78 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ------------------------------------------------------------------
+   Ventriloc editorial system — light theme only.
+   Warm paper canvas, monochrome precision, ember-orange punctuation.
+   Raw palette lives here; shadcn semantic tokens map onto it below.
+------------------------------------------------------------------- */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Raw Ventriloc palette */
+    --color-graphite: #202020;
+    --color-canvas-white: #ffffff;
+    --color-ash: #efefef;
+    --color-fog: #f5f5f5;
+    --color-ivory: #ebe6dd;
+    --color-steel: #4d4d4d;
+    --color-slate: #828282;
+    --color-mist: #e8e8e8;
+    --color-ember-orange: #ff682c;
+    --color-brass: #816729;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* shadcn semantic tokens (HSL triplets) */
+    --background: 0 0% 96.1%;            /* fog — page workspace */
+    --foreground: 0 0% 12.5%;            /* graphite */
+
+    --card: 0 0% 100%;                   /* white data cards float on fog */
+    --card-foreground: 0 0% 12.5%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 0 0% 12.5%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 0 0% 12.5%;               /* graphite-filled primary action */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 0 0% 93.7%;             /* ash */
+    --secondary-foreground: 0 0% 12.5%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 0 0% 91%;                   /* mist */
+    --muted-foreground: 0 0% 30.2%;      /* steel — keeps 4.5:1 on white/ash */
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 0 0% 93.7%;                /* ash hover wash */
+    --accent-foreground: 0 0% 12.5%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62% 42%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 0 0% 91%;                  /* mist hairlines */
+    --input: 0 0% 91%;
+    --ring: 0 0% 12.5%;
 
     --radius: 0.5rem;
   }
 
+  /* Dark mode is retired: a stale `.dark` class must still render light. */
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --background: 0 0% 96.1%;
+    --foreground: 0 0% 12.5%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 12.5%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 12.5%;
+    --primary: 0 0% 12.5%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 93.7%;
+    --secondary-foreground: 0 0% 12.5%;
+    --muted: 0 0% 91%;
+    --muted-foreground: 0 0% 30.2%;
+    --accent: 0 0% 93.7%;
+    --accent-foreground: 0 0% 12.5%;
+    --destructive: 0 62% 42%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 91%;
+    --input: 0 0% 91%;
+    --ring: 0 0% 12.5%;
   }
 }
 
@@ -71,8 +82,176 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-body;
+    -webkit-font-smoothing: antialiased;
   }
+
+  /* Editorial headings: display face at weight 400, tight tracking.
+     Hierarchy comes from size and whitespace, never boldness. */
+  h1, h2, h3, h4 {
+    @apply font-display font-normal tracking-[-0.02em] text-foreground;
+    text-wrap: balance;
+  }
+  h1 { @apply text-4xl leading-[1.13]; }
+  h2 { @apply text-[32px] leading-[1.19]; }
+  h3 { @apply text-lg leading-[1.25]; }
+}
+
+@layer utilities {
+  /* Signature asymmetric feature-card corner: soft top-left, sharp elsewhere */
+  .rounded-asymmetric {
+    border-radius: 6px 0 0 0;
+  }
+  /* Ember underline for the one or two most important links per page */
+  .link-ember {
+    text-decoration: underline;
+    text-decoration-color: var(--color-ember-orange);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Workspace contrast bands — alternating white/graphite sections, each
+   opening with an editorial intro (number + title + points) before the
+   live feature content. Dark bands remap the shadcn tokens locally so
+   embedded feature pages stay readable without touching their code.
+------------------------------------------------------------------- */
+.ws-band {
+  padding: 64px clamp(20px, 4vw, 56px) 72px;
+}
+.ws-band-light {
+  /* near-white warm gray so white cards float (Ventriloc surface rhythm) */
+  background: var(--color-fog);
+}
+.ws-band-dark {
+  background: #191919;
+  /* Local shadcn token remap: cards, text, borders adapt inside this band */
+  --background: 0 0% 10%;
+  --foreground: 0 0% 96%;
+  --card: 0 0% 14%;
+  --card-foreground: 0 0% 96%;
+  --popover: 0 0% 14%;
+  --popover-foreground: 0 0% 96%;
+  --primary: 0 0% 96%;
+  --primary-foreground: 0 0% 10%;
+  --secondary: 0 0% 18%;
+  --secondary-foreground: 0 0% 96%;
+  --muted: 0 0% 20%;
+  --muted-foreground: 0 0% 66%;
+  --accent: 0 0% 18%;
+  --accent-foreground: 0 0% 96%;
+  --border: 0 0% 24%;
+  --input: 0 0% 24%;
+  --ring: 0 0% 96%;
+  color: hsl(var(--foreground));
+}
+
+.ws-band-head {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
+  gap: 40px;
+  align-items: end;
+  max-width: 1280px;
+  margin: 0 auto 48px;
+}
+@media (max-width: 900px) {
+  .ws-band-head {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+.ws-band-kicker {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--color-ember-orange);
+}
+.ws-band-num {
+  font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  color: inherit;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ws-band-title {
+  font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(30px, 3.6vw, 44px);
+  line-height: 1.08;
+  letter-spacing: -0.9px;
+  font-weight: 400;
+  margin-top: 14px;
+  color: var(--color-graphite);
+}
+.ws-band-dark .ws-band-title {
+  color: #f5f5f5;
+}
+.ws-band-desc {
+  margin-top: 14px;
+  font-size: 16px;
+  line-height: 1.55;
+  max-width: 62ch;
+  color: var(--color-steel);
+}
+.ws-band-dark .ws-band-desc {
+  color: #b5b5b5;
+}
+.ws-band-points {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 22px 24px;
+  border-radius: 6px 0 0 0; /* signature asymmetric corner */
+  background: var(--color-ash);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--color-steel);
+}
+.ws-band-dark .ws-band-points {
+  background: #222222;
+  color: #b5b5b5;
+}
+.ws-band-points li {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+}
+.ws-band-tick {
+  color: var(--color-ember-orange);
+  flex-shrink: 0;
+}
+.ws-band-body {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+/* Band intro already names each OS — hide the embedded page's own H1 block */
+.ws-band-body .os-layout-header {
+  display: none;
+}
+/* The dashboard ships its own full-bleed background — let the band carry it */
+.ws-band .sector-dash {
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  min-height: 0;
+}
+
+/* Active sidebar item: NavLink stamps aria-current="page"; light the ember dot. */
+[aria-current='page'] .nav-ember-dot {
+  opacity: 1;
 }
 
 /* Kill the browser's default blue focus outline on the workspace + sidebar nav.
@@ -89,4 +268,12 @@
 [aria-label="Mobile Navigation"] a:focus-visible {
   outline: none !important;
   box-shadow: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -20,7 +20,7 @@ export const AINativeCard: React.FC<AIBaseCardProps> = ({ title, confidenceScore
   };
 
   return (
-    <Card className={cn("border-border bg-card shadow-sm", className)}>
+    <Card className={cn("border-0 bg-card", className)}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div className="space-y-1">
           <Badge className={cn("mb-2", typeColors[type])}>{type}</Badge>
