@@ -67,6 +67,17 @@ class RAGPipeline:
             except Exception as e:
                 logger.error(f"DATA GROUNDING SUMMARY ERROR: {str(e)}")
 
+        # 1b. Market benchmark for the workspace's sector, so the bot can compare
+        #     the user's data against the market. Cloud HTTP call, no embeddings.
+        if db is not None:
+            try:
+                from app.core.rag.market_summary import build_market_summary
+                market = build_market_summary(db, ws_uuid)
+                if market:
+                    parts.append(market)
+            except Exception as e:
+                logger.error(f"MARKET SUMMARY ERROR: {str(e)}")
+
         # 2. Semantically relevant rows for the specific query (needs embeddings;
         #    skipped when the retriever is disabled on small hosts).
         if self.retriever is not None:
