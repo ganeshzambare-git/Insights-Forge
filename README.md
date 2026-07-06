@@ -1,4 +1,4 @@
-# 🌌 Insights Forge (/DecisIQ)
+# 🌌 Insights Forge 
 
 > **Multi-tenant AI Decision Intelligence Platform** catering to **Retail, Service, Education, and Agriculture** sectors. Designed to turn raw operational data into interactive analytics, geospatial maps, and AI-powered recommendations.
 
