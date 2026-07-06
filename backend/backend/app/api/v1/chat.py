@@ -25,9 +25,29 @@ from app.schemas.chat import (
 from app.core.errors import AppError
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
-chat_service = ChatService()
-memory_service = ConversationMemoryService()
-maintenance_service = ConversationMaintenance()
+
+
+class _Lazy:
+    """Defer service construction until first use.
+
+    Instantiating ChatService eagerly loads heavy ML weights (embedding model),
+    which blocks app startup — on small hosts the port never binds in time and
+    the deploy fails with a port-scan timeout. Build on first request instead.
+    """
+
+    def __init__(self, factory):
+        self._factory = factory
+        self._obj = None
+
+    def __getattr__(self, item):
+        if self._obj is None:
+            self._obj = self._factory()
+        return getattr(self._obj, item)
+
+
+chat_service = _Lazy(ChatService)
+memory_service = _Lazy(ConversationMemoryService)
+maintenance_service = _Lazy(ConversationMaintenance)
 
 
 from fastapi.responses import StreamingResponse  # noqa: E402
