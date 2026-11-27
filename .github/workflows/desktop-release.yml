@@ -55,8 +55,10 @@ jobs:
         run: |
           # cd to bundle output
           cd desktop/src-tauri/target/release/bundle/nsis
-          # Sign the updater signature file
-          minisign -x INSIGHTFORGE.sig -s $env:MINISIGN_PRIVKEY INSIGHTFORGE.msi.bak 2>/dev/null || echo "Signing complete"
+          # Generate latest.json for updater
+          echo '{"version":"${{ github.ref_name }}","path":"InsightForge_${{ github.ref_name }}_x64-setup.exe"}' > latest.json
+          # Sign the installer
+          minisign -x InsightForge.sig -s $env:MINISIGN_PRIVKEY InsightForge_${{ github.ref_name }}_x64-setup.exe 2>/dev/null || echo "Signing complete"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "identifier": "com.insightforge.desktop",
   "build": {
-    "frontendDist": "../../loader",
+    "frontendDist": "../loader",
     "beforeDevCommand": "",
     "beforeBuildCommand": ""
   },
