@@ -1,0 +1,46 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "InsightForge",
+  "version": "1.0.0",
+  "identifier": "com.insightforge.desktop",
+  "build": {
+    "frontendDist": "../../loader",
+    "beforeDevCommand": "",
+    "beforeBuildCommand": ""
+  },
+  "app": {
+    "security": {
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://insights-forge-aie6.vercel.app https://insights-forge.onrender.com"
+    },
+    "windows": [
+      {
+        "title": "InsightForge",
+        "url": "index.html",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 1000,
+        "minHeight": 700,
+        "center": true,
+        "fullscreen": false,
+        "resizable": true
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "icon": ["icons/icon.ico"]
+  },
+  "plugins": {
+    "updater": {
+      "active": true,
+      "endpoints": ["https://github.com/ganeshzambare-git/Insights-Forge/releases/download/"],
+      "dialog": {
+        "title": "Update Available",
+        "message": "A new version of InsightForge is available. Install now?",
+        "confirmButtonLabel": "Install",
+        "cancelButtonLabel": "Skip"
+      }
+    }
+  }
+}

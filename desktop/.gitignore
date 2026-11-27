@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Rust build artifacts
+src-tauri/target/
+
+# Generated icons (keep only icon.ico)
+src-tauri/icons/*.png
+src-tauri/icons/*.icns
+!src-tauri/icons/icon.ico
+
+# Backup files
+src-tauri/icons/*.bak
+
+# Lock files (generated)
+package-lock.json
+src-tauri/Cargo.lock

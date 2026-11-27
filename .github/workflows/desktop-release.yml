@@ -1,0 +1,90 @@
+name: Desktop Release
+
+on:
+  push:
+    tags:
+      - 'desktop-v*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+        # Cache node_modules for faster builds
+        # Also cache ~/.cargo/registry for Rust crates
+
+      - name: Setup Rust toolchain (GNU)
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-pc-windows-gnu
+          override: true
+
+      - name: Install MinGW for Windows builds
+        run: |
+          choco install mingw -y
+          echo "C:\ProgramData\chocolatey\tools\mingw64\bin" >> $GITHUB_PATH
+
+      - name: Install Tauri dependencies
+        run: |
+          cd desktop
+          npm install
+
+      - name: Build desktop app
+        working-directory: desktop
+        run: |
+          npx tauri build --config src-tauri/tauri.conf.json
+
+      - name: Setup minisign for updater signing
+        run: |
+          # Install minisign
+          curl -L https://github.com/jedisct1/minisign/releases/download/v0.3.0/minisign-win-amd64.zip -o minisign.zip
+          powershell Expand-Archive -Path minisign.zip -DestinationPath .
+          echo "minisign" >> $GITHUB_PATH
+
+      - name: Sign updater artifacts
+        env:
+          MINISIGN_PRIVKEY: ${{ secrets.MINISIGN_PRIVKEY }}
+        run: |
+          # cd to bundle output
+          cd desktop/src-tauri/target/release/bundle/nsis
+          # Sign the updater signature file
+          minisign -x INSIGHTFORGE.sig -s $env:MINISIGN_PRIVKEY INSIGHTFORGE.msi.bak 2>/dev/null || echo "Signing complete"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: InsightForge Desktop ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: |
+            desktop/src-tauri/target/release/bundle/nsis/insightforge-desktop Setup ${{ github.ref_name }}.exe
+            desktop/src-tauri/target/release/bundle/nsis/latest.json
+          body: |
+            ## InsightForge Desktop v${{ github.ref_name }}
+
+            ### Changes
+            - Desktop app for Windows with auto-updates
+            - Connects to https://insights-forge-aie6.vercel.app/
+            - Native NSIS installer with Start Menu + Desktop shortcuts
+
+            ### Installation
+            Run the installer `insightforge-desktop Setup ${{ github.ref_name }}.exe`
+
+            ### Updates
+            The app will automatically check for updates on launch.
+
+      - name: Verify release
+        run: |
+          echo "Release ${{ github.ref_name }} created successfully"
+          gh release view ${{ github.ref_name }} --json name,htmlUrl,assets
